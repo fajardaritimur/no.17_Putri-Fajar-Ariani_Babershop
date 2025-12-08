@@ -27,17 +27,20 @@ export default function LoginPelanggan() {
 
             const data = await res.json();
 
-           if (res.ok) {
-    localStorage.setItem("token", data.token);
+            if (res.ok) {
+                localStorage.setItem("token", data.token);
 
-    // WAJIB!!! ini yang bikin dashboard hidup
-    localStorage.setItem("pelanggan", JSON.stringify(data.pelanggan));
+                // simpan data pelanggan lengkap
+                localStorage.setItem("pelanggan", JSON.stringify(data.pelanggan));
 
-    alert("Login berhasil!");
-    navigate("/pelanggan");
-} else {
-    alert(data.message || "Login gagal!");
-}
+                // ‼ BAGIAN PALING PENTING ‼
+                localStorage.setItem("userId", data.pelanggan.id_pelanggan);
+
+                alert("Login berhasil!");
+                navigate("/pelanggan");
+            } else {
+                alert(data.message || "Login gagal!");
+            }
 
         } catch (err) {
             console.error(err);

@@ -9,7 +9,6 @@ export default function Struck() {
   const [bayar, setBayar] = useState(0);
   const kembali = bayar - total;
 
-  // Formatter angka ke format Rupiah
   const rupiah = (n) => `Rp ${Number(n).toLocaleString("id-ID")}`;
 
   useEffect(() => {
@@ -18,7 +17,6 @@ export default function Struck() {
       .then((data) => {
         setTransaksi(data);
         setTotal((Number(data.harga) || 0) * 1000);
-
       })
       .catch((err) => console.error("Gagal fetch transaksi:", err));
   }, [id]);
@@ -62,6 +60,7 @@ export default function Struck() {
 
         <hr style={{ border: "1px dashed #000", margin: "10px 0" }} />
 
+        {/* INFORMASI UTAMA */}
         <div
           style={{
             textAlign: "left",
@@ -70,43 +69,41 @@ export default function Struck() {
           }}
         >
           <div>
-  <strong>Tanggal</strong>
-  <span style={{ float: "right" }}>
-    {new Date(transaksi.tgl_trans).toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })}
-  </span>
-</div>
-<div>
-  <strong>Waktu</strong>
-  <span style={{ float: "right" }}>
-    {new Date().toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    })}
-  </span>
-</div>
+            <strong>Tanggal</strong>
+            <span style={{ float: "right" }}>
+              {new Date(transaksi.tgl_trans).toLocaleDateString("id-ID", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })}
+            </span>
+          </div>
+
+          <div>
+            <strong>Waktu</strong>
+            <span style={{ float: "right" }}>
+              {new Date().toLocaleTimeString("id-ID", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}
+            </span>
+          </div>
 
           <div>
             <strong>Pegawai</strong>
             <span style={{ float: "right" }}>{transaksi.nama_pegawai}</span>
           </div>
+
           <div>
             <strong>Pelanggan</strong>
             <span style={{ float: "right" }}>{transaksi.nama_pelanggan}</span>
-          </div>
-          <div>
-            <strong>ID Transaksi</strong>
-            <span style={{ float: "right" }}>#{transaksi.id_trans}</span>
           </div>
         </div>
 
         <hr style={{ border: "1px dashed #000", margin: "10px 0" }} />
 
-        {/* ITEM PAKET */}
+        {/* ITEM PAKET + LAYANAN */}
         <div
           style={{
             textAlign: "left",
@@ -121,11 +118,13 @@ export default function Struck() {
               {rupiah(Number(transaksi.harga) * 1000)}
             </span>
           </div>
+
+          <div>Layanan: {transaksi.nama_layanan}</div>
         </div>
 
         <hr style={{ border: "1px dashed #000", margin: "10px 0" }} />
 
-        {/* TOTAL, BAYAR, KEMBALI */}
+        {/* TOTAL BAYAR KEMBALI */}
         <div
           style={{
             textAlign: "left",
@@ -171,6 +170,7 @@ export default function Struck() {
 
         <hr style={{ border: "1px dashed #000", margin: "10px 0" }} />
 
+        {/* FOOTER */}
         <p style={{ fontSize: "13px", margin: "10px 0", textAlign: "center" }}>
           Terima kasih atas kunjungannya!
           <br />
@@ -180,6 +180,7 @@ export default function Struck() {
         </p>
       </div>
 
+      {/* BUTTON NON-PRINT */}
       <div className="no-print" style={{ marginTop: "20px" }}>
         <button
           onClick={handleCancel}
@@ -210,6 +211,7 @@ export default function Struck() {
         </button>
       </div>
 
+      {/* CSS UNTUK PRINT */}
       <style>
         {`@media print {
           body * {

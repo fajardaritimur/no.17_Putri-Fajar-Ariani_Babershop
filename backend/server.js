@@ -19,9 +19,7 @@ app.get('/alamat-baru', (req, res) => {
 app.get('/perkenalan', (req, res) => {
     res.send('nama saya fajar')
 })
-app.listen(PORT, () => {
-    console.log(`Server berjalan di http://localhost:${PORT}`);
-})
+
 
 
 const mysql = require('mysql2')
@@ -38,6 +36,18 @@ db.connect(err => {
         console.log('Berhasill terkonekk anjayyyy')
     }
 })
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/");
+    },
+    filename: (req, file, cb) => {
+        const unique = Date.now() + "-" + file.originalname;
+        cb(null, unique);
+    }
+});
+
+const upload = multer({ storage });
 
 //route untuk select pengguna
 app.get('/pengguna', (req, res) => {
@@ -176,46 +186,59 @@ app.post('/loginpelanggan', (req, res) => {
 
 
 //route untuk select paket
-app.get('/paket', (req, res) => {
-    const sql = 'SELECT * FROM paket';
-    db.query(sql, (err, results) => {
-        if (err) return res.status(500).json({ error: err.sqlMessage })
-        res.json(results)
-    })
-})
+app.get("/paket/:id", (req, res) => {
+    const sql = "SELECT * FROM paket WHERE id_paket = ?";
+    db.query(sql, [req.params.id], (err, result) => {
+        if (err) return res.status(500).json({ error: err.sqlMessage });
+        res.json(result[0]);
+    });
+});
+
 
 //route untuk insert paket
-app.post('/paket', async (req, res) => {
-    const { nama_paket, harga } = req.body;
+app.post("/paket", upload.single("gambar"), (req, res) => {
     try {
-        const sql = 'INSERT INTO paket (nama_paket, harga) VALUES(?, ?)';
-        db.query(sql, [nama_paket, harga], (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
+        const { nama_paket } = req.body;
+        const gambar = req.file ? req.file.filename : null;
+
+        const sql = "INSERT INTO paket (nama_paket, image) VALUES (?, ?)";
+        db.query(sql, [nama_paket, gambar], (err, result) => {
+            if (err) {
+                console.log("SQL ERROR:", err);
+                return res.status(500).json({ error: err.sqlMessage });
+            }
+
             res.json({
-                message: 'paket berhasil ditambahkan!',
+                message: "Paket berhasil ditambahkan!",
                 id_paket: result.insertId
             });
         });
-    } catch (err) {
-        res.status(500).json({ error: 'gagal menambahkan paket' });
+
+    } catch (error) {
+        console.error("SERVER ERROR:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 
+
 //rout untuk update paket
-app.put('/paket/:id_paket', async (req, res) => {
-    const { id_paket  } = req.params;
-    const { nama_paket, harga } = req.body;
-    try {
-        const sql = 'UPDATE paket SET nama_paket=?, harga=? WHERE id_paket=?';
-        const values = [nama_paket, harga, id_paket];
-        db.query(sql, values, (err, result) => {
-            if (err) return res.status(500).json({ error: err.sqlMessage });
-            res.json({ message: 'paket berhasil diupdate' });
-        });
-    } catch (err) {
-        res.status(500).json({ error: 'gagal update paket' });
-    }
+app.put("/paket/:id", upload.single("gambar"), (req, res) => {
+    const { nama_paket } = req.body;
+    const image = req.file ? req.file.filename : req.body.gambar_lama;
+
+    const sql = `
+        UPDATE paket 
+        SET nama_paket = ?, image = ?
+        WHERE id_paket = ?
+    `;
+
+    db.query(sql, [nama_paket, image, req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.sqlMessage });
+        res.json({ message: "Paket berhasil diupdate!" });
+    });
 });
+
+
 //rout untuk menghapus paket
 app.delete('/paket/:id_paket', (req, res) => {
     const { id_paket } = req.params
@@ -225,16 +248,14 @@ app.delete('/paket/:id_paket', (req, res) => {
         res.json({ message: 'Paket berhasil dihapus!' })
     })
 })
+app.get('/paket', (req, res) => {
+    db.query("SELECT id_paket, nama_paket, image FROM paket", 
+    (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(results);
+    });
+});
 
-//get pengguna berdasarkan id_paket
-app.get('/paket/:id_paket', (req, res) => {
-    const { id_paket } = req.params
-    const sql = 'SELECT * FROM paket WHERE id_paket = ?'
-    db.query(sql, [id_paket], (err, results) => {
-        if (err) return res.status(500).json({ error: err.sqlMessage })
-        res.json(results)
-    })
-})
 
 //route untuk select pegawai
 app.get('/pegawai', (req, res) => {
@@ -298,177 +319,6 @@ app.get('/pegawai/:id_pegawai', (req, res) => {
     });
 });
 
-// ---------------------------
-// GET semua transaksi
-// ---------------------------
-app.get("/transaksi", (req, res) => {
-  const sql = `
-    SELECT 
-      t.id_trans, 
-      t.tgl_trans, 
-      t.id_pelanggan,
-      pl.nama_pelanggan AS nama_pelanggan,
-      t.id_paket,
-      p.nama_paket,
-      p.harga,
-      t.id_pegawai,
-      g.nama_pegawai,
-      t.id_pengguna
-    FROM transaksi t
-    LEFT JOIN paket p ON t.id_paket = p.id_paket
-    LEFT JOIN pegawai g ON t.id_pegawai = g.id_pegawai
-    LEFT JOIN pelanggan pl ON t.id_pelanggan = pl.id_pelanggan
-    ORDER BY t.id_trans DESC
-  `;
-
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ error: err.sqlMessage });
-    res.json(results);
-  });
-});
-
-
-
-// ---------------------------
-// GET detail transaksi by ID (UNTUK STRUK)
-// ---------------------------
-app.get("/transaksi/:id_trans", (req, res) => {
-  const { id_trans } = req.params;
-
-  const sql = `
-    SELECT 
-      t.id_trans, 
-      t.tgl_trans,
-      t.id_pelanggan,
-      pl.nama_pelanggan,
-      t.id_paket,
-      p.nama_paket,
-      p.harga,
-      t.id_pegawai,
-      g.nama_pegawai,
-      t.id_pengguna
-    FROM transaksi t
-    LEFT JOIN paket p ON t.id_paket = p.id_paket
-    LEFT JOIN pegawai g ON t.id_pegawai = g.id_pegawai
-    LEFT JOIN pelanggan pl ON t.id_pelanggan = pl.id_pelanggan
-    WHERE t.id_trans = ?
-  `;
-
-  db.query(sql, [id_trans], (err, result) => {
-    if (err) return res.status(500).json({ error: err.sqlMessage });
-    if (result.length === 0) return res.status(404).json({ message: "Transaksi tidak ditemukan" });
-    res.json(result[0]);
-  });
-});
-
-// =======================
-// CARI ID PELANGGAN BY NAMA
-// =======================
-function findPelangganIdByName(nama, callback) {
-    if (!nama) return callback(null, null);
-
-    const sql = "SELECT id_pelanggan FROM pelanggan WHERE nama_pelanggan = ?";
-    db.query(sql, [nama], (err, result) => {
-        if (err) return callback(err, null);
-
-        if (result.length > 0) {
-            callback(null, result[0].id_pelanggan);
-        } else {
-            callback(null, null); // jika nama tidak ditemukan
-        }
-    });
-}
-
-// =======================
-// TAMBAH TRANSAKSI
-// =======================
-app.post("/transaksi", (req, res) => {
-    const { tgl_trans, nama_pelanggan, id_paket, id_pegawai, id_pengguna } = req.body;
-
-    // 1️⃣ Cari ID pelanggan berdasarkan nama
-    const sqlFindPelanggan = `SELECT id_pelanggan FROM pelanggan WHERE nama_pelanggan = ?`;
-
-    db.query(sqlFindPelanggan, [nama_pelanggan], (err, hasilPelanggan) => {
-        if (err) {
-            console.log("Error cari pelanggan:", err);
-            return res.status(500).json({ message: "Error mencari pelanggan" });
-        }
-
-        if (hasilPelanggan.length === 0) {
-            return res.status(400).json({ message: "Nama pelanggan tidak ditemukan" });
-        }
-
-        const idPelanggan = hasilPelanggan[0].id_pelanggan;
-
-        // 2️⃣ Insert transaksi
-        const sqlInsert = `
-            INSERT INTO transaksi (tgl_trans, id_pelanggan, id_paket, id_pegawai, id_pengguna)
-            VALUES (?, ?, ?, ?, ?)
-        `;
-
-        const values = [
-            tgl_trans,
-            idPelanggan,
-            id_paket,
-            id_pegawai,
-            id_pengguna
-        ];
-
-        db.query(sqlInsert, values, (errInsert, hasilInsert) => {
-            if (errInsert) {
-                console.log("Error insert transaksi:", errInsert.sqlMessage);
-                return res.status(500).json({ message: "Gagal menyimpan transaksi" });
-            }
-
-            res.json({ message: "Transaksi berhasil disimpan", id: hasilInsert.insertId });
-        });
-    });
-});
-
-
-
-
-// ---------------------------
-// UPDATE transaksi
-// (mirip logic: prefer id_pelanggan, fallback cek nama_pelanggan)
-// ---------------------------
-app.put("/transaksi/:id_trans", (req, res) => {
-  const { id_trans } = req.params;
-  const { tgl_trans, id_pelanggan, nama_pelanggan, id_paket, id_pegawai, id_pengguna } = req.body;
-
-  const doUpdate = (finalIdPelanggan) => {
-    const sql = `
-      UPDATE transaksi 
-      SET tgl_trans = ?, id_pelanggan = ?, id_paket = ?, id_pegawai = ?, id_pengguna = ?
-      WHERE id_trans = ?
-    `;
-    db.query(sql, [tgl_trans || null, finalIdPelanggan, id_paket || null, id_pegawai || null, id_pengguna || null, id_trans], (err) => {
-      if (err) return res.status(500).json({ error: err.sqlMessage });
-      res.json({ message: "Transaksi berhasil diupdate!" });
-    });
-  };
-
-  if (id_pelanggan) {
-    return doUpdate(id_pelanggan);
-  }
-
-  findPelangganIdByName(nama_pelanggan, (errFind, foundId) => {
-    if (errFind) return res.status(500).json({ error: errFind.sqlMessage || errFind.message });
-    doUpdate(foundId);
-  });
-});
-
-// ---------------------------
-// DELETE transaksi
-// ---------------------------
-app.delete("/transaksi/:id_trans", (req, res) => {
-  const { id_trans } = req.params;
-  const sql = "DELETE FROM transaksi WHERE id_trans = ?";
-  db.query(sql, [id_trans], (err) => {
-    if (err) return res.status(500).json({ error: err.sqlMessage });
-    res.json({ message: "Transaksi berhasil dihapus!" });
-  });
-});
 
 //pelanggan
 app.post('/pelanggan/register', (req, res) => {
@@ -602,53 +452,229 @@ app.delete("/pelanggan/:id", (req, res) => {
 });
 
 app.get("/layanan", (req, res) => {
-    const sql = "SELECT * FROM layanan ORDER BY id_layanan DESC";
+    const sql = `
+        SELECT 
+            l.id_layanan,
+            l.nama_layanan,
+            l.harga,
+            p.nama_paket
+        FROM layanan l
+        LEFT JOIN paket p ON l.id_paket = p.id_paket
+        ORDER BY l.id_layanan DESC
+    `;
 
-    db.query(sql, (err, result) => {
+    db.query(sql, (err, results) => {
         if (err) return res.status(500).json({ error: err.sqlMessage });
-        res.json(result);
+        res.json(results);
     });
 });
+
 
 // =======================
 // GET layanan berdasarkan id_paket
 // =======================
 app.get("/layanan/paket/:id_paket", (req, res) => {
-    const { id_paket } = req.params;
+    db.query(
+        "SELECT * FROM layanan WHERE id_paket = ?",
+        [req.params.id_paket],
+        (err, results) => {
+            if (err) return res.status(500).json({ error: err });
+            res.json(results);
+        }
+    );
+});
+
+
+app.post("/layanan", (req, res) => {
+    const { nama_layanan, harga, id_paket } = req.body;
 
     const sql = `
-        SELECT *
-        FROM layanan
-        WHERE id_paket = ?
+        INSERT INTO layanan (nama_layanan, harga, id_paket)
+        VALUES (?, ?, ?)
     `;
 
-    db.query(sql, [id_paket], (err, results) => {
+    db.query(sql, [nama_layanan, harga, id_paket], (err, result) => {
+        if (err) return res.status(500).json({ error: err.sqlMessage });
+
+        res.json({ message: "Layanan berhasil ditambahkan!" });
+    });
+});
+
+// =======================
+// DELETE layanan
+// =======================
+app.delete("/layanan/:id_layanan", (req, res) => {
+    const { id_layanan } = req.params;
+
+    const sql = "DELETE FROM layanan WHERE id_layanan = ?";
+
+    db.query(sql, [id_layanan], (err, result) => {
+        if (err) return res.status(500).json({ error: err.sqlMessage });
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Layanan tidak ditemukan" });
+        }
+
+        res.json({ message: "Layanan berhasil dihapus!" });
+    });
+});
+// ---------------------------
+// GET semua transaksi
+// ---------------------------
+app.get("/transaksi", (req, res) => {
+    const sql = `
+        SELECT 
+            t.id_trans,
+            t.tgl_trans,
+            pl.nama_pelanggan,
+            p.nama_paket,
+            l.nama_layanan,
+            pg.nama_pegawai
+        FROM transaksi t
+        LEFT JOIN pelanggan pl ON t.id_pelanggan = pl.id_pelanggan
+        LEFT JOIN paket p ON t.id_paket = p.id_paket
+        LEFT JOIN layanan l ON t.id_layanan = l.id_layanan
+        LEFT JOIN pegawai pg ON t.id_pegawai = pg.id_pegawai
+        ORDER BY t.id_trans DESC
+    `;
+
+    db.query(sql, (err, results) => {
         if (err) return res.status(500).json({ error: err.sqlMessage });
         res.json(results);
     });
 });
-// ================================
+
+
+// ---------------------------
+// GET detail transaksi by ID (STRUK)
+// ---------------------------
+app.get("/transaksi/:id_trans", (req, res) => {
+    const { id_trans } = req.params;
+
+    const sql = `
+        SELECT 
+            t.id_trans,
+            t.tgl_trans,
+            pl.nama_pelanggan,
+            pl.no_hp,
+            p.nama_paket,
+            l.nama_layanan,
+            l.harga,
+            pg.nama_pegawai
+        FROM transaksi t
+        LEFT JOIN pelanggan pl ON t.id_pelanggan = pl.id_pelanggan
+        LEFT JOIN paket p ON t.id_paket = p.id_paket
+        LEFT JOIN pegawai pg ON t.id_pegawai = pg.id_pegawai
+        LEFT JOIN layanan l ON t.id_layanan = l.id_layanan
+        WHERE t.id_trans = ?
+    `;
+
+    db.query(sql, [id_trans], (err, result) => {
+        if (err) return res.status(500).json({ error: err.sqlMessage });
+        if (result.length === 0)
+            return res.status(404).json({ message: "Transaksi tidak ditemukan" });
+
+        res.json(result[0]);
+    });
+});
+
+
+// ---------------------------
+// INSERT TRANSAKSI dari BOOKING
+// ---------------------------
+app.post("/transaksi/booking", (req, res) => {
+    const { id_pelanggan, id_paket, id_layanan, tanggal } = req.body;
+
+    console.log("DATA DITERIMA BACKEND:", req.body);
+
+    if (!id_pelanggan || !id_paket || !id_layanan || !tanggal) {
+        return res
+            .status(400)
+            .json({ message: "Data tidak lengkap dari frontend" });
+    }
+
+    // Pilih pegawai random
+    const sqlPegawai = "SELECT id_pegawai FROM pegawai ORDER BY RAND() LIMIT 1";
+
+    db.query(sqlPegawai, (err, pegawai) => {
+        if (err || pegawai.length === 0) {
+            return res.status(500).json({ message: "Gagal memilih pegawai" });
+        }
+
+        const idPegawai = pegawai[0].id_pegawai;
+
+        const sql = `
+            INSERT INTO transaksi (tgl_trans, id_pelanggan, id_paket, id_layanan, id_pegawai)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+
+        db.query(
+            sql,
+            [tanggal, id_pelanggan, id_paket, id_layanan, idPegawai],
+            (err, result) => {
+                if (err) {
+                    console.log("SQL ERROR:", err.sqlMessage);
+                    return res.status(500).json({ message: "Gagal menyimpan transaksi" });
+                }
+
+                res.json({
+                    message: "Transaksi berhasil dibuat!",
+                    id_trans: result.insertId,
+                    id_pegawai: idPegawai
+                });
+            }
+        );
+    });
+});
+
+
+// ---------------------------
 // GET transaksi berdasarkan id_pelanggan
-// ================================
-app.get("/transaksi/pelanggan/:id_pelanggan", (req, res) => {
-    const { id_pelanggan } = req.params;
+// ---------------------------
+app.get("/transaksi/pelanggan/:id", (req, res) => {
+    const { id } = req.params;
 
     const sql = `
         SELECT 
             t.id_trans,
             t.tgl_trans,
             p.nama_paket,
-            p.harga,
-            g.nama_pegawai
+            l.nama_layanan,
+            l.harga
         FROM transaksi t
         LEFT JOIN paket p ON t.id_paket = p.id_paket
-        LEFT JOIN pegawai g ON t.id_pegawai = g.id_pegawai
+        LEFT JOIN layanan l ON t.id_layanan = l.id_layanan
         WHERE t.id_pelanggan = ?
         ORDER BY t.id_trans DESC
     `;
 
-    db.query(sql, [id_pelanggan], (err, results) => {
+    db.query(sql, [id], (err, results) => {
         if (err) return res.status(500).json({ error: err.sqlMessage });
         res.json(results);
     });
+});
+
+
+// ---------------------------
+// DELETE TRANSAKSI
+// ---------------------------
+app.delete("/transaksi/:id_trans", (req, res) => {
+    const { id_trans } = req.params;
+
+    const sql = "DELETE FROM transaksi WHERE id_trans = ?";
+
+    db.query(sql, [id_trans], (err, result) => {
+        if (err) return res.status(500).json({ error: err.sqlMessage });
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Transaksi tidak ditemukan" });
+        }
+
+        res.json({ message: "Transaksi berhasil dihapus!" });
+    });
+});
+
+// PALING BAWAH BARU INI !!!
+app.listen(PORT, () => {
+    console.log(`Server berjalan di http://localhost:${PORT}`);
 });

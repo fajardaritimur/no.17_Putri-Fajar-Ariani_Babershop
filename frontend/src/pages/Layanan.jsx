@@ -22,6 +22,25 @@ export default function Layanan() {
   }, []);
 
   if (loading) return <div className="admin-card">Loading...</div>;
+  const handleDelete = async (id) => {
+  if (!window.confirm("Yakin ingin menghapus layanan ini?")) return;
+
+  try {
+    const res = await fetch(`http://localhost:7000/layanan/${id}`, {
+      method: "DELETE",
+    });
+
+    const data = await res.json();
+    alert(data.message);
+
+    // refresh list
+    getLayanan();
+
+  } catch (err) {
+    alert("Gagal menghapus layanan");
+  }
+};
+
 
   return (
     <div className="admin-card">
@@ -47,7 +66,8 @@ export default function Layanan() {
               <td>{item.id_layanan}</td>
               <td>{item.nama_layanan}</td>
               <td>{item.nama_paket}</td> 
-              <td>Rp {Number(item.harga).toLocaleString()}</td>
+              <td>Rp {Number(item.harga).toLocaleString("id-ID")}</td>
+
 
               <td>
                 <button
@@ -58,13 +78,12 @@ export default function Layanan() {
                 </button>
 
                 <button
-                  className="btn-delete"
-                  onClick={() =>
-                    navigate(`/layanan/delete/${item.id_layanan}`)
-                  }
-                >
-                  Hapus
-                </button>
+  className="btn-delete"
+  onClick={() => handleDelete(item.id_layanan)}
+>
+  Hapus
+</button>
+
               </td>
             </tr>
           ))}

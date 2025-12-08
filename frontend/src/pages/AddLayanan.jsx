@@ -1,12 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function AddLayanan() {
     const [formData, setFormData] = useState({
-        nama_layanan: ""
+        nama_layanan: "",
+        harga: "",
+        id_paket: ""
     });
 
+    const [paketList, setPaketList] = useState([]);
     const navigate = useNavigate();
+
+    // Ambil paket untuk dropdown
+    const getPaket = async () => {
+        const res = await fetch("http://localhost:7000/paket");
+        const data = await res.json();
+        setPaketList(data);
+    };
+
+    useEffect(() => {
+        getPaket();
+    }, []);
 
     const handleChange = (e) => {
         setFormData({
@@ -18,23 +32,17 @@ export default function AddLayanan() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        try {
-            const res = await fetch("http://localhost:7000/layanan", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData)
-            });
+        const res = await fetch("http://localhost:7000/layanan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData)
+        });
 
-            if (res.ok) {
-                alert("Layanan berhasil ditambahkan!");
-                setFormData({ nama_layanan: "" }); // reset form
-                navigate("/layanan"); // redirect ke halaman daftar layanan
-            } else {
-                alert("Gagal menambah layanan");
-            }
-        } catch (err) {
-            console.error("Error:", err);
-            alert("Terjadi kesalahan saat menambah layanan");
+        if (res.ok) {
+            alert("Layanan berhasil ditambahkan!");
+            navigate("/layanan");
+        } else {
+            alert("Gagal menambah layanan");
         }
     };
 
@@ -51,9 +59,38 @@ export default function AddLayanan() {
                         value={formData.nama_layanan}
                         onChange={handleChange}
                         className="form-control"
-                        placeholder="Masukkan Nama Layanan"
                         required
                     />
+                </div>
+
+                <div className="mb-3">
+                    <label className="form-label">Harga</label>
+                    <input
+                        type="number"
+                        name="harga"
+                        value={formData.harga}
+                        onChange={handleChange}
+                        className="form-control"
+                        required
+                    />
+                </div>
+
+                <div className="mb-3">
+                    <label className="form-label">Pilih Paket</label>
+                    <select
+                        className="form-control"
+                        name="id_paket"
+                        value={formData.id_paket}
+                        onChange={handleChange}
+                        required
+                    >
+                        <option value="">-- pilih paket --</option>
+                        {paketList.map((p) => (
+                            <option key={p.id_paket} value={p.id_paket}>
+                                {p.nama_paket}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 <button type="submit" className="btn btn-success">
