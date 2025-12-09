@@ -74,7 +74,7 @@ export default function AdminPelanggan() {
               {/* field nama_pelanggan */}
               <td>{item.nama_pelanggan}</td>
 
-              <td>@{item.username}</td>
+              <td>{item.username ? `@${item.username}` : "-"}</td>
               <td>{item.email}</td>
               <td>{item.no_hp}</td>
 

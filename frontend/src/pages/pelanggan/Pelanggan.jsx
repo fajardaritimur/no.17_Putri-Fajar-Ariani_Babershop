@@ -17,12 +17,12 @@ export default function Pelanggan() {
   const [paket, setPaket] = useState([]);
   const pelanggan = JSON.parse(localStorage.getItem("pelanggan"));
 
-  useEffect(() => {
-    fetch("http://localhost:7000/paket")
-      .then((res) => res.json())
-      .then((data) => setPaket(data))
-      .catch((err) => console.error("Error fetch paket:", err));
-  }, []);
+useEffect(() => {
+  fetch("http://localhost:7000/paket")
+    .then((res) => res.json())
+    .then((data) => setPaket(data))
+    .catch((err) => console.error("Error fetch paket:", err));
+}, []);
 
   const services = [
     { id: 1, name: "Beauty", image: beautyImg },
@@ -35,11 +35,7 @@ export default function Pelanggan() {
 
 
   const promoList = [
-    { id: 1, title: "Gift Voucher 5%", desc: "Jika sudah berlanggan selama 1 bulan", image: limaPersen },
-    { id: 2, title: "Gift Voucher 10%", desc: "Untuk pembelian paket smoothing", image: "/assets/salon.jpeg" },
-    { id: 3, title: "New Year Voucher", desc: "Perawatan kuku premium", image: "/assets/salon.jpeg" },
-    { id: 4, title: "Promo Valentine", desc: "Cerah & glowing dalam 1x perawatan", image: "/assets/salon.jpeg" },
-    { id: 5, title: "Birthday Promo", desc: "Harga spesial minggu ini", image: "/assets/salon.jpeg" },
+    { id: 1, title: "Gift Voucher 5%", desc: "Jika sudah berlanggan selama 1 bulan", image: limaPersen},
   ];
 
   const scrollToSection = (id) => {
@@ -52,38 +48,38 @@ export default function Pelanggan() {
     <div style={styles.container}>
 
       {/* NAVBAR */}
-      <nav style={styles.navbar}>
-        <h2 style={styles.logo}>Edward Salon</h2>
+<nav style={styles.navbar}>
+  <h2 style={styles.logo}>Edward Salon</h2>
 
-        <ul style={styles.navList}>
-          <li style={styles.navItem} onClick={() => scrollToSection("homeSection")}>Home</li>
-          <li style={styles.navItem} onClick={() => scrollToSection("serviceSection")}>Service</li>
-          <li style={styles.navItem} onClick={() => scrollToSection("promoSection")}>Promo</li>
-          <li style={styles.navItem} onClick={() => scrollToSection("bookingSection")}>Booking</li>
+  <ul style={styles.navList}>
+    <li style={styles.navItem} onClick={() => scrollToSection("homeSection")}>Home</li>
+    <li style={styles.navItem} onClick={() => scrollToSection("paketSection")}>Service</li>
+    <li style={styles.navItem} onClick={() => scrollToSection("promoSection")}>Promo</li>
+    <li style={styles.navItem} onClick={() => scrollToSection("bookingSection")}>Booking</li>
 
-          {/* Jika belum login → tampil tombol Masuk */}
-          {!pelanggan && (
-            <li
-              style={{ ...styles.navItem, fontWeight: "700", cursor: "pointer" }}
-              onClick={() => navigate("/pelanggan/login")}
-            >
-              Masuk
-            </li>
-          )}
+    {/* Jika belum login → tampil tombol Masuk */}
+{!pelanggan && (
+  <li 
+    style={{ ...styles.navItem, fontWeight: "700", cursor: "pointer" }}
+    onClick={() => navigate("/pelanggan/login")}
+  >
+    Masuk
+  </li>
+)}
 
-          {/* Jika sudah login → tampil icon akun */}
-          {pelanggan && (
-            <li style={styles.iconAccount}>
-              <MdAccountCircle
-                size={36}
-                onClick={() => navigate("/pelanggan/dashboard")}
-                style={{ cursor: "pointer" }}
-              />
-            </li>
-          )}
+{/* Jika sudah login → tampil icon akun */}
+{pelanggan && (
+  <li style={styles.iconAccount}>
+    <MdAccountCircle
+      size={36}
+      onClick={() => navigate("/pelanggan/dashboard")}
+      style={{ cursor: "pointer" }}
+    />
+  </li>
+)}
 
-        </ul>
-      </nav>
+  </ul>
+</nav>
 
 
       {/* HOME SECTION */}
@@ -104,28 +100,28 @@ export default function Pelanggan() {
       </section>
 
 
-      {/* PAKET SECTION */}
-      <section id="paketSection">
-        <section style={styles.carouselSection}>
-          <h2 style={styles.sectionTitle}>Paket Kami</h2>
+     {/* PAKET SECTION */}
+<section id="paketSection">
+  <section style={styles.carouselSection}>
+    <h2 style={styles.sectionTitle}>Paket Kami</h2>
 
-          <div style={styles.carouselContainer}>
-            {paket.map((item) => (
-              <div
-                key={item.id_paket}
-                style={styles.serviceCard}
-                onClick={() => navigate(`/pelanggan/booking/${item.id_paket}`)}
-              >
-                <img
-                  src={`http://localhost:7000/uploads/${item.image}`}
-                  style={styles.serviceImage}
-                />
-                <p style={styles.serviceName}>{item.nama_paket}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      </section>
+    <div style={styles.carouselContainer}>
+      {paket.map((item) => (
+        <div
+          key={item.id_paket}
+          style={styles.serviceCard}
+          onClick={() => navigate(`/pelanggan/booking/${item.id_paket}`)}
+        >
+          <img
+            src={`http://localhost:7000/uploads/${item.image}`}
+            style={styles.serviceImage}
+          />
+          <p style={styles.serviceName}>{item.nama_paket}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+</section>
 
 
       {/* PROMO SECTION */}
@@ -136,101 +132,90 @@ export default function Pelanggan() {
           <div style={styles.promoCarousel}>
             {promoList.map((promo) => (
               <div key={promo.id} style={styles.promoCard}>
-
-                {/* GAMBAR DIPERBESAR */}
                 <img src={promo.image} style={styles.promoImage} />
-
                 <h3 style={styles.promoTitle}>{promo.title}</h3>
                 <p style={styles.promoDesc}>{promo.desc}</p>
-
-                {/* TOMBOL KLAIM */}
-                <button
-                  style={styles.ctaBtn}
-                  onClick={() => alert("Promo berhasil diklaim!")}
-                >
-                  Klaim Promo
-                </button>
+                <button style={styles.ctaBtn}>Lihat Promo</button>
               </div>
             ))}
           </div>
-
         </section>
       </section>
 
       {/* BOOKING SECTION (NEW LAYOUT LIKE MAYMAY) */}
-      <section
-        id="bookingSection"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          padding: "120px 60px",
-          background: "#FFFFFF",
-        }}
-      >
-        {/* LEFT TEXT */}
-        <div style={{ width: "45%" }}>
-          <h2 style={{ fontSize: "32px", fontWeight: "700", marginBottom: "10px" }}>
-            Booking
-          </h2>
+<section
+  id="bookingSection"
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    padding: "120px 60px",
+    background: "#FFFFFF",
+  }}
+>
+  {/* LEFT TEXT */}
+  <div style={{ width: "45%" }}>
+    <h2 style={{ fontSize: "32px", fontWeight: "700", marginBottom: "10px" }}>
+      Booking
+    </h2>
 
-          <div style={{
-            width: "60px",
-            height: "4px",
-            background: "#C7A560",
-            marginBottom: "25px"
-          }} />
+    <div style={{
+      width: "60px",
+      height: "4px",
+      background: "#C7A560",
+      marginBottom: "25px"
+    }} />
 
-          <p style={{ fontSize: "16px", lineHeight: "1.6", marginBottom: "30px" }}>
-            Kami buka setiap hari. Silakan lakukan booking agar kamu bisa
-            mendapatkan slot dengan stylist atau terapis pilihanmu.
-            Pilih cabang dan waktu yang sesuai untukmu.
-          </p>
+    <p style={{ fontSize: "16px", lineHeight: "1.6", marginBottom: "30px" }}>
+      Kami buka setiap hari. Silakan lakukan booking agar kamu bisa
+      mendapatkan slot dengan stylist atau terapis pilihanmu.
+      Pilih cabang dan waktu yang sesuai untukmu.
+    </p>
 
-          <button
-            onClick={() => navigate("/pelanggan/booking/:id_paket")}
-            style={{
-              padding: "14px 28px",
-              border: "2px solid #C7A560",
-              background: "white",
-              fontSize: "16px",
-              fontWeight: "600",
-              cursor: "pointer",
-              borderRadius: "8px",
-              transition: "0.3s",
-            }}
-          >
-            Booking Sekarang
-          </button>
+    <button
+  onClick={() => navigate("/pelanggan/booking/:id_paket")}
+  style={{
+    padding: "14px 28px",
+    border: "2px solid #C7A560",
+    background: "white",
+    fontSize: "16px",
+    fontWeight: "600",
+    cursor: "pointer",
+    borderRadius: "8px",
+    transition: "0.3s",
+  }}
+>
+  Booking Sekarang
+</button>
 
-        </div>
+  </div>
 
-        {/* RIGHT IMAGES */}
-        <div
-          style={{
-            width: "50%",
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "12px",
-          }}
-        >
-          <img src={salonImage} style={styles.bookingImg} />
-          <img src={beautyImg} style={styles.bookingImg} />
-          <img src={hairImg} style={styles.bookingImg} />
-          <img src={handImg} style={styles.bookingImg} />
-        </div>
-      </section>
+  {/* RIGHT IMAGES */}
+  <div
+    style={{
+      width: "50%",
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: "12px",
+    }}
+  >
+    <img src={salonImage} style={styles.bookingImg} />
+    <img src={beautyImg} style={styles.bookingImg} />
+    <img src={hairImg} style={styles.bookingImg} />
+    <img src={handImg} style={styles.bookingImg} />
+  </div>
+</section>
 
-      {/* FORM BOOKING SECTION */}
-      <section
-        id="formBooking"
-        style={{
-          padding: "100px 20px",
-          textAlign: "center",
-          background: "#F6F9FF"
-        }}
-      >
-      </section>
+{/* FORM BOOKING SECTION */}
+<section
+  id="formBooking"
+  style={{
+    padding: "100px 20px",
+    textAlign: "center",
+    background: "#F6F9FF"
+  }}
+>
+</section>
 
 
     </div>
@@ -472,16 +457,16 @@ const styles = {
     transition: "0.3s",
   },
   bookingImg: {
-    width: "100%",
-    height: "220px",
-    objectFit: "cover",
-    borderRadius: "12px",
-  },
-  iconAccount: {
-    display: "flex",
-    alignItems: "center",
-    cursor: "pointer",
-  },
+  width: "100%",
+  height: "220px",
+  objectFit: "cover",
+  borderRadius: "12px",
+},
+iconAccount: {
+  display: "flex",
+  alignItems: "center",
+  cursor: "pointer",
+},
 
 
 };

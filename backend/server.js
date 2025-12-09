@@ -322,13 +322,12 @@ app.get('/pegawai/:id_pegawai', (req, res) => {
 
 //pelanggan
 app.post('/pelanggan/register', (req, res) => {
-    const { nama_pelanggan, email, password, no_hp } = req.body;
+    const { nama_pelanggan, username, email, password, no_hp } = req.body;
 
-    if (!nama_pelanggan || !email || !password || !no_hp) {
+    if (!nama_pelanggan || !username || !email || !password || !no_hp) {
         return res.status(400).json({ message: "Semua field wajib diisi" });
     }
 
-    // Cek apakah email sudah digunakan
     const checkSql = "SELECT * FROM pelanggan WHERE email = ?";
     db.query(checkSql, [email], (err, result) => {
         if (err) return res.status(500).json({ error: err.sqlMessage });
@@ -337,29 +336,28 @@ app.post('/pelanggan/register', (req, res) => {
             return res.status(400).json({ message: "Email sudah digunakan" });
         }
 
-        // Hash password
         const hashedPassword = bcrypt.hashSync(password, 10);
 
-        // SQL INSERT
         const insertSql = `
-            INSERT INTO pelanggan (nama_pelanggan, email, password, no_hp) 
-            VALUES (?, ?, ?, ?)
+            INSERT INTO pelanggan (nama_pelanggan, username, email, password, no_hp) 
+            VALUES (?, ?, ?, ?, ?)
         `;
 
         db.query(
             insertSql,
-            [nama_pelanggan, email, hashedPassword, no_hp],
+            [nama_pelanggan, username, email, hashedPassword, no_hp],
             (err2, result2) => {
                 if (err2) return res.status(500).json({ error: err2.sqlMessage });
 
-                return res.status(201).json({ 
+                return res.status(201).json({
                     message: "Registrasi berhasil",
-                    id_pelanggan: result2.insertId 
+                    id_pelanggan: result2.insertId
                 });
             }
         );
     });
 });
+
 
 // ================================
 // CRUD UNTUK DATA PELANGGAN
